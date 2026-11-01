@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         Loaded="Window_Loaded">
     <Grid>
-        <TabControl>
+        <TabControl x:Name="MainTabs">
             <TabItem Header="ゲーム">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -27,30 +27,34 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="24" MaxWidth="520" HorizontalAlignment="Left">
                     <TextBlock Text="表示・操作" FontSize="20" FontWeight="Bold" Margin="0,0,0,16" />
-                    <CheckBox x:Name="AlwaysOnTopCheckBox"
-                              Content="ウィンドウを最前面に表示する"
-                              Checked="AlwaysOnTopCheckBox_Changed"
-                              Unchecked="AlwaysOnTopCheckBox_Changed"
-                              Margin="0,0,0,20" />
-                    <TextBlock Text="ゲーム画面の表示倍率（12段階）" />
-                    <ComboBox x:Name="ZoomComboBox" Margin="0,8,0,20" Width="140"
-                              HorizontalAlignment="Left" IsEditable="False"
-                              ItemStringFormat="{}{0}%"
-                              SelectionChanged="ZoomComboBox_SelectionChanged" />
+                    <CheckBox x:Name="DarkModeCheckBox" Content="ダークモードを使用する"
+                              Checked="DarkModeCheckBox_Changed" Unchecked="DarkModeCheckBox_Changed"
+                              Margin="0,0,0,4" />
                     <CheckBox x:Name="MutedCheckBox"
                               Content="ゲームの音声をOFFにする"
                               Checked="MutedCheckBox_Changed"
                               Unchecked="MutedCheckBox_Changed"
-                              Margin="0,0,0,20" />
-                    <TextBlock Text="スクリーンショットの保存先" />
-                    <TextBox x:Name="ScreenshotDirectoryTextBox" Margin="0,8,0,8"
-                             IsReadOnly="True" TextWrapping="Wrap" />
-                    <Button Content="保存先フォルダーを選択..." HorizontalAlignment="Left"
-                            Margin="0,0,0,8" Click="SelectScreenshotDirectory_Click" />
-                    <TextBlock Text="保存先は次回起動時にも復元します。未指定の場合はアプリ内の Screenshots に保存します。"
-                               TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,20" />
+                              Margin="0,0,0,4" />
+                    <CheckBox x:Name="AlwaysOnTopCheckBox"
+                              Content="ウィンドウを最前面に表示する"
+                              Checked="AlwaysOnTopCheckBox_Changed"
+                              Unchecked="AlwaysOnTopCheckBox_Changed"
+                              Margin="0,0,0,16" />
+                    <TextBlock Text="ゲーム画面の表示倍率（12段階）" />
+                    <ComboBox x:Name="ZoomComboBox" Margin="0,8,0,4" Width="140"
+                              HorizontalAlignment="Left" IsEditable="False"
+                              ItemStringFormat="{}{0}%"
+                              SelectionChanged="ZoomComboBox_SelectionChanged" />
                     <TextBlock Text="100%のゲーム表示領域は1275×720です。選択した倍率に合わせてウィンドウのサイズも変更します。設定とブラウザーデータはアプリの Data フォルダーに保存します。"
-                               TextWrapping="Wrap" Foreground="Gray" />
+                               TextWrapping="Wrap" Opacity="0.75"  Margin="0,0,0,16" />
+                    <TextBlock Text="スクリーンショットの保存先" />
+                        <TextBox x:Name="ScreenshotDirectoryTextBox" Margin="0,8,0,4"
+                              Width="280" HorizontalAlignment="Left" 
+                              IsReadOnly="True" TextWrapping="Wrap" />
+                    <Button Content="保存先フォルダーを選択..." HorizontalAlignment="Left"
+                            Margin="0,0,0,4" Click="SelectScreenshotDirectory_Click" />
+                    <TextBlock Text="保存先は次回起動時にも復元します。未指定の場合はアプリ内の Screenshots に保存します。"
+                               TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,20" />
                 </StackPanel>
                 </ScrollViewer>
             </TabItem>

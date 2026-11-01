@@ -87,10 +87,6 @@ public partial class MainWindow : Window
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        UpdateLayout();
-        _windowChromeWidth = ActualWidth - Browser.ActualWidth;
-        _windowChromeHeight = ActualHeight - Browser.ActualHeight;
-
         try
         {
             Directory.CreateDirectory(_dataDirectory);
@@ -113,6 +109,11 @@ public partial class MainWindow : Window
             _settings.ZoomFactor = zoomFactor;
             AlwaysOnTopCheckBox.IsChecked = _settings.AlwaysOnTop;
             MutedCheckBox.IsChecked = _settings.IsMuted;
+            DarkModeCheckBox.IsChecked = _settings.IsDarkMode;
+            ApplyTheme();
+            UpdateLayout();
+            _windowChromeWidth = ActualWidth - Browser.ActualWidth;
+            _windowChromeHeight = ActualHeight - Browser.ActualHeight;
             ZoomComboBox.SelectedItem = zoomPercentage;
             Topmost = _settings.AlwaysOnTop;
             ScreenshotDirectoryTextBox.Text = ScreenshotDirectory;
@@ -268,6 +269,34 @@ public partial class MainWindow : Window
         SaveSettings();
     }
 
+    private void DarkModeCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_settingsLoaded)
+        {
+            return;
+        }
+
+        _settings.IsDarkMode = DarkModeCheckBox.IsChecked == true;
+        var selectedTab = MainTabs.SelectedIndex;
+        MainTabs.SelectedIndex = 0;
+        ApplyTheme();
+        Browser.ClearValue(WidthProperty);
+        Browser.ClearValue(HeightProperty);
+        UpdateLayout();
+        _windowChromeWidth = ActualWidth - Browser.ActualWidth;
+        _windowChromeHeight = ActualHeight - Browser.ActualHeight;
+        ApplyZoom();
+        MainTabs.SelectedIndex = selectedTab;
+        SaveSettings();
+    }
+
+    private void ApplyTheme()
+    {
+#pragma warning disable WPF0001
+        ThemeMode = _settings.IsDarkMode ? System.Windows.ThemeMode.Dark : System.Windows.ThemeMode.None;
+#pragma warning restore WPF0001
+    }
+
     private void SaveSettings()
     {
         if (!_settingsLoaded)
@@ -310,6 +339,7 @@ public partial class MainWindow : Window
     {
         public bool AlwaysOnTop { get; set; }
         public bool IsMuted { get; set; }
+        public bool IsDarkMode { get; set; }
         public double ZoomFactor { get; set; } = 1;
         public string? ScreenshotDirectory { get; set; }
     }
