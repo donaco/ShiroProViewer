@@ -1,0 +1,54 @@
+<Window x:Class="ShiroProViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="御城プロジェクトRE 専用ブラウザ"
+        Width="1291"
+        Height="900"
+        MinWidth="900"
+        MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded">
+    <Grid>
+        <TabControl>
+            <TabItem Header="ゲーム">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0">
+                        <Button Content="スクリーンショット" Click="ScreenshotButton_Click" />
+                        <Separator />
+                        <TextBlock x:Name="BrowserStatusText" VerticalAlignment="Center" />
+                    </ToolBar>
+                    <wv2:WebView2 x:Name="Browser" Grid.Row="1" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="設定">
+                <StackPanel Margin="24" MaxWidth="520" HorizontalAlignment="Left">
+                    <TextBlock Text="表示・操作" FontSize="20" FontWeight="Bold" Margin="0,0,0,16" />
+                    <CheckBox x:Name="AlwaysOnTopCheckBox"
+                              Content="ウィンドウを最前面に表示する"
+                              Checked="AlwaysOnTopCheckBox_Changed"
+                              Unchecked="AlwaysOnTopCheckBox_Changed"
+                              Margin="0,0,0,20" />
+                    <TextBlock Text="ゲーム画面の表示倍率" />
+                    <DockPanel Margin="0,8,0,20">
+                        <TextBlock x:Name="ZoomValueText" DockPanel.Dock="Right" Width="55" TextAlignment="Right" />
+                        <Slider x:Name="ZoomSlider" Minimum="0.5" Maximum="1.5" Value="1"
+                                TickFrequency="0.05" IsSnapToTickEnabled="False"
+                                ValueChanged="ZoomSlider_ValueChanged" />
+                    </DockPanel>
+                    <CheckBox x:Name="MutedCheckBox"
+                              Content="ゲームの音声をOFFにする"
+                              Checked="MutedCheckBox_Changed"
+                              Unchecked="MutedCheckBox_Changed"
+                              Margin="0,0,0,20" />
+                    <TextBlock Text="ゲーム表示領域の横幅は1275pxです。設定とブラウザーデータはアプリの Data フォルダーに保存します。"
+                               TextWrapping="Wrap" Foreground="Gray" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
