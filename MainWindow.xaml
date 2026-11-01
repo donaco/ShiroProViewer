@@ -42,6 +42,13 @@
                               Checked="MutedCheckBox_Changed"
                               Unchecked="MutedCheckBox_Changed"
                               Margin="0,0,0,20" />
+                    <TextBlock Text="スクリーンショットの保存先" />
+                    <TextBox x:Name="ScreenshotDirectoryTextBox" Margin="0,8,0,8"
+                             IsReadOnly="True" TextWrapping="Wrap" />
+                    <Button Content="保存先フォルダーを選択..." HorizontalAlignment="Left"
+                            Margin="0,0,0,8" Click="SelectScreenshotDirectory_Click" />
+                    <TextBlock Text="保存先は次回起動時にも復元します。未指定の場合はアプリ内の Screenshots に保存します。"
+                               TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,20" />
                     <TextBlock Text="100%のゲーム表示領域は1275×720です。選択した倍率に合わせてウィンドウのサイズも変更します。設定とブラウザーデータはアプリの Data フォルダーに保存します。"
                                TextWrapping="Wrap" Foreground="Gray" />
                 </StackPanel>

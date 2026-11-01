@@ -72,12 +72,17 @@ public partial class MainWindow : Window
     private double _windowChromeWidth;
     private double _windowChromeHeight;
 
+    private string ScreenshotDirectory => string.IsNullOrWhiteSpace(_settings.ScreenshotDirectory)
+        ? Path.Combine(AppContext.BaseDirectory, "Screenshots")
+        : _settings.ScreenshotDirectory;
+
     public MainWindow()
     {
         InitializeComponent();
         Width = GameWidth + 16;
         ZoomComboBox.ItemsSource = ZoomPercentages;
         ZoomComboBox.SelectedItem = 100;
+        ScreenshotDirectoryTextBox.Text = ScreenshotDirectory;
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -110,6 +115,7 @@ public partial class MainWindow : Window
             MutedCheckBox.IsChecked = _settings.IsMuted;
             ZoomComboBox.SelectedItem = zoomPercentage;
             Topmost = _settings.AlwaysOnTop;
+            ScreenshotDirectoryTextBox.Text = ScreenshotDirectory;
 
             var browserDataDirectory = Path.Combine(_dataDirectory, "Browser");
             Directory.CreateDirectory(browserDataDirectory);
@@ -166,7 +172,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var screenshotDirectory = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+            var screenshotDirectory = ScreenshotDirectory;
             Directory.CreateDirectory(screenshotDirectory);
             var filePath = Path.Combine(screenshotDirectory, $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png");
             await using var imageStream = File.Create(filePath);
@@ -188,6 +194,29 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex)
         {
             ShowScreenshotError(ex);
+        }
+    }
+
+    private void SelectScreenshotDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_settingsLoaded)
+        {
+            MessageBox.Show(this, "ブラウザーの起動が完了してから保存先を選択してください。", "保存先の設定",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "スクリーンショットの保存先を選択",
+            InitialDirectory = Directory.Exists(ScreenshotDirectory) ? ScreenshotDirectory : AppContext.BaseDirectory,
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) == true)
+        {
+            _settings.ScreenshotDirectory = dialog.FolderName;
+            ScreenshotDirectoryTextBox.Text = ScreenshotDirectory;
+            SaveSettings();
         }
     }
 
@@ -282,5 +311,6 @@ public partial class MainWindow : Window
         public bool AlwaysOnTop { get; set; }
         public bool IsMuted { get; set; }
         public double ZoomFactor { get; set; } = 1;
+        public string? ScreenshotDirectory { get; set; }
     }
 }
