@@ -72,6 +72,10 @@ public partial class MainWindow : Window
     private readonly string _dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
     private ViewerSettings _settings = new();
     private bool _settingsLoaded;
+    private bool _settingsRecovered;
+    private bool _pageLoaded;
+    private bool _isCapturing;
+    private ulong _navigationId;
     private double _windowChromeWidth;
     private double _windowChromeHeight;
 
@@ -116,18 +120,7 @@ public partial class MainWindow : Window
         try
         {
             Directory.CreateDirectory(_dataDirectory);
-            var settingsPath = Path.Combine(_dataDirectory, "settings.json");
-            if (File.Exists(settingsPath))
-            {
-                await using var settingsStream = File.OpenRead(settingsPath);
-                _settings = await JsonSerializer.DeserializeAsync<ViewerSettings>(settingsStream)
-                    ?? throw new InvalidDataException("設定ファイルの内容が空です。");
-            }
-
-            if (!double.IsFinite(_settings.ZoomFactor) || _settings.ZoomFactor <= 0)
-            {
-                throw new InvalidDataException("設定ファイルの表示倍率が不正です。");
-            }
+            _settings = await LoadSettingsAsync();
 
             var zoomPercentage = ZoomPercentages.MinBy(value => Math.Abs(value / 100.0 - _settings.ZoomFactor));
             var zoomFactor = zoomPercentage / 100.0;
@@ -154,10 +147,12 @@ public partial class MainWindow : Window
             Browser.CoreWebView2.Navigate(GamePageUrl);
 
             _settingsLoaded = true;
-            BrowserStatusText.Text = "御城プロジェクトRE を読み込みました。";
-            if (zoomAdjusted)
+            if (zoomAdjusted || _settingsRecovered)
             {
                 SaveSettings();
+            }
+            if (zoomAdjusted)
+            {
                 MessageBox.Show(this, $"保存されていた表示倍率を、最も近い選択肢の {zoomPercentage}% に変更しました。",
                     "表示倍率", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -188,29 +183,88 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Browser_NavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
+    {
+        _navigationId = e.NavigationId;
+        _pageLoaded = false;
+        BrowserStatusText.Text = "ページを読み込み中です。";
+    }
+
+    private void Browser_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+    {
+        if (e.NavigationId != _navigationId)
+        {
+            return;
+        }
+
+        _pageLoaded = e.IsSuccess;
+        BrowserStatusText.Text = e.IsSuccess
+            ? "ページの読み込みが完了しました。"
+            : $"ページを読み込めませんでした: {e.WebErrorStatus}";
+    }
+
     private async void ScreenshotButton_Click(object sender, RoutedEventArgs e)
     {
-        if (Browser.CoreWebView2 is null)
+        var coreWebView = Browser.CoreWebView2;
+        if (!_settingsLoaded || !_pageLoaded || coreWebView is null)
         {
-            MessageBox.Show(this, "ゲーム画面の読み込みが完了してから撮影してください。", "スクリーンショット",
+            MessageBox.Show(this, "ページの読み込みが完了してから撮影してください。", "スクリーンショット",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (_isCapturing)
+        {
+            MessageBox.Show(this, "撮影中です。保存が完了してから再度撮影してください。", "スクリーンショット",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
+        _isCapturing = true;
+        string? temporaryPath = null;
         try
         {
+            var navigationId = _navigationId;
             var screenshotDirectory = ScreenshotDirectory;
-            Directory.CreateDirectory(screenshotDirectory);
             var filePath = Path.Combine(screenshotDirectory, $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss_fff}.png");
-            await using var imageStream = File.Create(filePath);
-            await Browser.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, imageStream);
+            using var imageStream = new MemoryStream();
+            await coreWebView.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, imageStream);
+            if (!_pageLoaded || navigationId != _navigationId)
+            {
+                throw new InvalidOperationException("撮影中にページが切り替わりました。読み込み完了後に再度撮影してください。");
+            }
+            if (imageStream.Length == 0)
+            {
+                throw new InvalidDataException("撮影した画像が空です。");
+            }
+
+            Directory.CreateDirectory(screenshotDirectory);
+            temporaryPath = filePath + $".{Guid.NewGuid():N}.tmp";
+            imageStream.Position = 0;
+            using (var fileStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                imageStream.CopyTo(fileStream);
+                fileStream.Flush(flushToDisk: true);
+            }
+            File.Move(temporaryPath, filePath);
             BrowserStatusText.Text = $"保存しました: {Path.GetFileName(filePath)}";
+        }
+        catch (ArgumentException ex)
+        {
+            ShowScreenshotError(ex);
+        }
+        catch (NotSupportedException ex)
+        {
+            ShowScreenshotError(ex);
         }
         catch (UnauthorizedAccessException ex)
         {
             ShowScreenshotError(ex);
         }
         catch (IOException ex)
+        {
+            ShowScreenshotError(ex);
+        }
+        catch (InvalidDataException ex)
         {
             ShowScreenshotError(ex);
         }
@@ -221,6 +275,11 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex)
         {
             ShowScreenshotError(ex);
+        }
+        finally
+        {
+            _isCapturing = false;
+            DeleteTemporaryFile(temporaryPath);
         }
     }
 
@@ -348,6 +407,75 @@ public partial class MainWindow : Window
 #pragma warning restore WPF0001
     }
 
+    private async Task<ViewerSettings> LoadSettingsAsync()
+    {
+        var settingsPath = Path.Combine(_dataDirectory, "settings.json");
+        var backupPath = settingsPath + ".bak";
+        if (!File.Exists(settingsPath) && !File.Exists(backupPath))
+        {
+            return new ViewerSettings();
+        }
+
+        try
+        {
+            return await ReadSettingsAsync(settingsPath);
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidDataException or FileNotFoundException)
+        {
+            _settingsRecovered = true;
+            ViewerSettings recoveredSettings;
+            try
+            {
+                recoveredSettings = await ReadSettingsAsync(backupPath);
+            }
+            catch (Exception backupException) when (backupException is JsonException or InvalidDataException or IOException or UnauthorizedAccessException)
+            {
+                MessageBox.Show(this,
+                    $"設定ファイルを読み込めず、バックアップからも復旧できませんでした。初期設定で起動します。\n\n設定: {ex.Message}\nバックアップ: {backupException.Message}",
+                    "設定の復旧", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return new ViewerSettings();
+            }
+
+            MessageBox.Show(this, $"設定ファイルを読み込めなかったため、前回保存時のバックアップから復旧しました。\n\n{ex.Message}",
+                "設定の復旧", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return recoveredSettings;
+        }
+    }
+
+    private static async Task<ViewerSettings> ReadSettingsAsync(string settingsPath)
+    {
+        await using var settingsStream = File.OpenRead(settingsPath);
+        var settings = await JsonSerializer.DeserializeAsync<ViewerSettings>(settingsStream)
+            ?? throw new InvalidDataException("設定ファイルの内容が空です。");
+        if (!double.IsFinite(settings.ZoomFactor) || settings.ZoomFactor <= 0)
+        {
+            throw new InvalidDataException("設定ファイルの表示倍率が不正です。");
+        }
+
+        if (!string.IsNullOrWhiteSpace(settings.ScreenshotDirectory))
+        {
+            try
+            {
+                var fullPath = Path.GetFullPath(settings.ScreenshotDirectory);
+                var root = Path.GetPathRoot(fullPath)
+                    ?? throw new ArgumentException("保存先のルートを取得できません。");
+                var components = fullPath[root.Length..].Split(
+                    [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.None);
+                if (components.Any(component => component.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+                {
+                    throw new ArgumentException("保存先に使用できない文字が含まれています。");
+                }
+                settings.ScreenshotDirectory = fullPath;
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                throw new InvalidDataException($"設定ファイルのスクリーンショット保存先が不正です。{ex.Message}", ex);
+            }
+        }
+
+        return settings;
+    }
+
     private void SaveSettings()
     {
         if (!_settingsLoaded)
@@ -355,11 +483,24 @@ public partial class MainWindow : Window
             return;
         }
 
+        var settingsPath = Path.Combine(_dataDirectory, "settings.json");
+        var temporaryPath = settingsPath + $".{Guid.NewGuid():N}.tmp";
         try
         {
-            var settingsPath = Path.Combine(_dataDirectory, "settings.json");
-            var json = JsonSerializer.Serialize(_settings, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(settingsPath, json);
+            using (var settingsStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                JsonSerializer.Serialize(settingsStream, _settings, new JsonSerializerOptions { WriteIndented = true });
+                settingsStream.Flush(flushToDisk: true);
+            }
+            if (File.Exists(settingsPath))
+            {
+                File.Replace(temporaryPath, settingsPath, _settingsRecovered ? null : settingsPath + ".bak");
+            }
+            else
+            {
+                File.Move(temporaryPath, settingsPath);
+            }
+            _settingsRecovered = false;
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -370,6 +511,33 @@ public partial class MainWindow : Window
         {
             MessageBox.Show(this, $"設定を保存できませんでした。\n\n{ex.Message}",
                 "設定の保存エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            DeleteTemporaryFile(temporaryPath);
+        }
+    }
+
+    private void DeleteTemporaryFile(string? temporaryPath)
+    {
+        if (temporaryPath is null)
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(temporaryPath);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            MessageBox.Show(this, $"一時ファイルを削除できませんでした。\n{temporaryPath}\n\n{ex.Message}",
+                "一時ファイルの削除エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (IOException ex)
+        {
+            MessageBox.Show(this, $"一時ファイルを削除できませんでした。\n{temporaryPath}\n\n{ex.Message}",
+                "一時ファイルの削除エラー", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

@@ -43,7 +43,9 @@
                 </ControlTemplate>
             </TabControl.Template>
             <TabItem Header="ゲーム">
-                <wv2:WebView2 x:Name="Browser" />
+                <wv2:WebView2 x:Name="Browser"
+                              NavigationStarting="Browser_NavigationStarting"
+                              NavigationCompleted="Browser_NavigationCompleted" />
             </TabItem>
             <TabItem Header="設定">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -54,43 +56,47 @@
                               Content="ゲームの音声をOFFにする"
                               Checked="MutedCheckBox_Changed"
                               Unchecked="MutedCheckBox_Changed"
+                              FontSize="16"
                               Margin="0" />
                     <CheckBox x:Name="DarkModeCheckBox" Content="ダークモードを使用する"
                               Checked="DarkModeCheckBox_Changed" Unchecked="DarkModeCheckBox_Changed"
+                              FontSize="16"
                               Margin="0" />                    
                     <CheckBox x:Name="AlwaysOnTopCheckBox"
                               Content="ウィンドウを最前面に表示する"
                               Checked="AlwaysOnTopCheckBox_Changed"
                               Unchecked="AlwaysOnTopCheckBox_Changed"
+                              FontSize="16"
                               Margin="0,0,0,16" />
-                    <TextBlock Text="ゲーム画面の表示倍率（12段階）" />
-                    <ComboBox x:Name="ZoomComboBox" Margin="0,8,0,4" Width="140"
+                    <TextBlock Text="ウーム画面の表示倍率" FontSize="16" Margin="8,0,0,0" />
+                    <ComboBox x:Name="ZoomComboBox" Margin="8,8,0,4" Width="140"
                               HorizontalAlignment="Left" IsEditable="False"
                               ItemStringFormat="{}{0}%"
                               SelectionChanged="ZoomComboBox_SelectionChanged" />
-                    <TextBlock Text="100%のゲーム表示領域は1275×720です。選択した倍率に合わせてウィンドウのサイズも変更します。設定とブラウザーデータはアプリの Data フォルダーに保存します。"
-                               TextWrapping="Wrap" Opacity="0.75"  Margin="0,0,0,16" />
+                    <TextBlock Text="100%のゲーム表示領域は1275×720です。選択した倍率に合わせてウィンドウのサイズも変更します。　設定とブラウザーデータはアプリの Data フォルダーに保存します。"
+                               TextWrapping="Wrap" Opacity="0.75"  Margin="8,0,0,16" />
 
                     <Rectangle StrokeThickness="1" Stroke="Gray" Width="1000" />
                   
                     <!-- スクショ設定 -->
                     <TextBlock Text="スクリーンショット" FontSize="20" FontWeight="Bold" Margin="0,16,0,4" />
-                    <TextBlock Text="スクリーンショットの保存先" />
-                        <TextBox x:Name="ScreenshotDirectoryTextBox" Margin="0,8,0,4"
-                              Width="280" HorizontalAlignment="Left" 
-                              IsReadOnly="True" TextWrapping="Wrap" />
-                    <Button Content="保存先フォルダーを選択..." HorizontalAlignment="Left"
-                            Margin="0,0,0,4" Click="SelectScreenshotDirectory_Click" />
+                    <TextBlock Text="スクリーンショットの保存先" FontSize="16" Margin="8,0,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="8,8,0,4">
+                        <TextBox x:Name="ScreenshotDirectoryTextBox"
+                                 Width="280" IsReadOnly="True" TextWrapping="Wrap" />
+                        <Button Content="保存先フォルダーを選択" VerticalAlignment="Center"
+                                Margin="8,0,0,0" Click="SelectScreenshotDirectory_Click" />
+                    </StackPanel>
                     <TextBlock Text="保存先は次回起動時にも復元します。未指定の場合はアプリ内の Screenshots に保存します。"
-                               TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,16" />
-                  
+                               TextWrapping="Wrap" Opacity="0.75" Margin="8,0,0,16" />
+
                     <Rectangle StrokeThickness="1" Stroke="Gray" Width="1000" />
                   
                     <!-- バージョン情報 -->
                     <TextBlock Text="バージョン情報" FontSize="20" FontWeight="Bold" Margin="0,16,0,4" />
-                    <TextBlock x:Name="AppVersionTextBlock" FontSize="16" />
-                    <TextBlock FontSize="16"><Run Text="Project home : " /><Hyperlink NavigateUri="https://github.com/donaco/ShiroProViewer" RequestNavigate="ProjectHomeHyperlink_RequestNavigate">https://github.com/donaco/ShiroProViewer</Hyperlink></TextBlock>
-                  <TextBlock Text="Auther : donaco" FontSize="16" />
+                    <TextBlock x:Name="AppVersionTextBlock" FontSize="16" Margin="8,0,0,0" />
+                    <TextBlock FontSize="16" Margin="8,0,0,0" ><Run Text="Project home : " /><Hyperlink NavigateUri="https://github.com/donaco/ShiroProViewer" RequestNavigate="ProjectHomeHyperlink_RequestNavigate">https://github.com/donaco/ShiroProViewer</Hyperlink></TextBlock>
+                  <TextBlock Text="Auther : donaco" FontSize="16" Margin="8,0,0,0" />
                 </StackPanel>
                 </ScrollViewer>
             </TabItem>
