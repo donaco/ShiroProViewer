@@ -318,7 +318,7 @@ public partial class MainWindow : Window
     private void ApplyTheme()
     {
 #pragma warning disable WPF0001
-        ThemeMode = _settings.IsDarkMode ? System.Windows.ThemeMode.Dark : System.Windows.ThemeMode.None;
+        ThemeMode = _settings.IsDarkMode ? System.Windows.ThemeMode.Dark : System.Windows.ThemeMode.Light;
 #pragma warning restore WPF0001
     }
 
@@ -364,7 +364,7 @@ public partial class MainWindow : Window
     {
         public bool AlwaysOnTop { get; set; }
         public bool IsMuted { get; set; }
-        public bool IsDarkMode { get; set; }
+        public bool IsDarkMode { get; set; } = true;
         public double ZoomFactor { get; set; } = 1;
         public string? ScreenshotDirectory { get; set; }
     }
