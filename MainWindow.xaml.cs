@@ -9,7 +9,43 @@ namespace ShiroProViewer;
 public partial class MainWindow : Window
 {
     private const double GameWidth = 1275;
-    private const string GamePageUrl = "https://play.games.dmm.com/";
+    private const string GamePageUrl = "https://play.games.dmm.com/game/oshirore";
+    private const string IsolateGameFrameScript = """
+        (() => {
+            if (window.top !== window) return;
+
+            const isolateGameFrame = () => {
+                const frame = document.querySelector('iframe#game_frame');
+                if (!frame) return false;
+
+                let element = frame;
+                while (element && element !== document.body) {
+                    const parent = element.parentElement;
+                    if (!parent) break;
+                    for (const sibling of parent.children) {
+                        if (sibling !== element) sibling.style.setProperty('display', 'none', 'important');
+                    }
+                    element.style.setProperty('display', 'block', 'important');
+                    element = parent;
+                }
+
+                document.documentElement.style.cssText = 'margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important';
+                document.body.style.cssText = 'margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important';
+                frame.style.setProperty('position', 'fixed', 'important');
+                frame.style.setProperty('top', '0', 'important');
+                frame.style.setProperty('left', '0', 'important');
+                frame.style.setProperty('width', '1275px', 'important');
+                frame.style.setProperty('height', '100vh', 'important');
+                frame.style.setProperty('border', '0', 'important');
+                return true;
+            };
+
+            const observer = new MutationObserver(() => {
+                if (isolateGameFrame()) observer.disconnect();
+            });
+            if (!isolateGameFrame()) observer.observe(document, { childList: true, subtree: true });
+        })();
+        """;
     private readonly string _dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
     private ViewerSettings _settings = new();
     private bool _settingsLoaded;
@@ -45,6 +81,7 @@ public partial class MainWindow : Window
             await Browser.EnsureCoreWebView2Async(environment);
             Browser.CoreWebView2.IsMuted = _settings.IsMuted;
             Browser.ZoomFactor = _settings.ZoomFactor;
+            await Browser.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(IsolateGameFrameScript);
             Browser.CoreWebView2.Navigate(GamePageUrl);
 
             _settingsLoaded = true;
