@@ -72,6 +72,7 @@ public partial class MainWindow : Window
     private double _windowChromeWidth;
     private double _windowChromeHeight;
 
+    private System.Windows.Controls.TextBlock BrowserStatusText => (System.Windows.Controls.TextBlock)MainTabs.Template.FindName("BrowserStatusText", MainTabs);
     private string ScreenshotDirectory => string.IsNullOrWhiteSpace(_settings.ScreenshotDirectory)
         ? Path.Combine(AppContext.BaseDirectory, "Screenshots")
         : _settings.ScreenshotDirectory;

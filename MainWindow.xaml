@@ -10,21 +10,40 @@
         Loaded="Window_Loaded">
     <Grid>
         <TabControl x:Name="MainTabs">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid KeyboardNavigation.TabNavigation="Local">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
+                            <ToolBar Grid.Column="1" HorizontalAlignment="Right">
+                                <Button Content="スクショ撮影" Click="ScreenshotButton_Click" />
+                                <Separator />
+                                <Button Content="再読込み" Click="ReloadButton_Click" />
+                                <Separator />
+                                <TextBlock x:Name="BrowserStatusText" VerticalAlignment="Center" Margin="8,0,8,0" />
+                            </ToolBar>
+                        </Grid>
+                        <Border Grid.Row="1" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}"
+                                KeyboardNavigation.TabIndex="2">
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              ContentSource="SelectedContent"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </TabControl.Template>
             <TabItem Header="ゲーム">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <ToolBar Grid.Row="0">
-                        <Button Content="スクショ撮影" Click="ScreenshotButton_Click"/>
-                        <Separator />
-                        <Button Content="再読込み" Click="ReloadButton_Click"/>
-                        <Separator />
-                        <TextBlock x:Name="BrowserStatusText" VerticalAlignment="Center" Margin="16,0,0,0"/>
-                    </ToolBar>
-                    <wv2:WebView2 x:Name="Browser" Grid.Row="1" />
-                </Grid>
+                <wv2:WebView2 x:Name="Browser" />
             </TabItem>
             <TabItem Header="設定">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
