@@ -65,19 +65,27 @@ public partial class MainWindow : Window
             if (!isolateTarget()) observer.observe(document, { childList: true, subtree: true });
         })();
         """;
+    private static readonly int[] ZoomPercentages = [25, 50, 66, 75, 100, 125, 150, 175, 200, 250, 300, 400];
     private readonly string _dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
     private ViewerSettings _settings = new();
     private bool _settingsLoaded;
+    private double _windowChromeWidth;
+    private double _windowChromeHeight;
 
     public MainWindow()
     {
         InitializeComponent();
         Width = GameWidth + 16;
-        ZoomValueText.Text = $"{ZoomSlider.Value:P0}";
+        ZoomComboBox.ItemsSource = ZoomPercentages;
+        ZoomComboBox.SelectedItem = 100;
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        UpdateLayout();
+        _windowChromeWidth = ActualWidth - Browser.ActualWidth;
+        _windowChromeHeight = ActualHeight - Browser.ActualHeight;
+
         try
         {
             Directory.CreateDirectory(_dataDirectory);
@@ -89,9 +97,18 @@ public partial class MainWindow : Window
                     ?? throw new InvalidDataException("設定ファイルの内容が空です。");
             }
 
+            if (!double.IsFinite(_settings.ZoomFactor) || _settings.ZoomFactor <= 0)
+            {
+                throw new InvalidDataException("設定ファイルの表示倍率が不正です。");
+            }
+
+            var zoomPercentage = ZoomPercentages.MinBy(value => Math.Abs(value / 100.0 - _settings.ZoomFactor));
+            var zoomFactor = zoomPercentage / 100.0;
+            var zoomAdjusted = _settings.ZoomFactor != zoomFactor;
+            _settings.ZoomFactor = zoomFactor;
             AlwaysOnTopCheckBox.IsChecked = _settings.AlwaysOnTop;
             MutedCheckBox.IsChecked = _settings.IsMuted;
-            ZoomSlider.Value = _settings.ZoomFactor;
+            ZoomComboBox.SelectedItem = zoomPercentage;
             Topmost = _settings.AlwaysOnTop;
 
             var browserDataDirectory = Path.Combine(_dataDirectory, "Browser");
@@ -99,12 +116,18 @@ public partial class MainWindow : Window
             var environment = await CoreWebView2Environment.CreateAsync(null, browserDataDirectory);
             await Browser.EnsureCoreWebView2Async(environment);
             Browser.CoreWebView2.IsMuted = _settings.IsMuted;
-            Browser.ZoomFactor = _settings.ZoomFactor;
+            ApplyZoom();
             await Browser.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(IsolateGameFrameScript);
             Browser.CoreWebView2.Navigate(GamePageUrl);
 
             _settingsLoaded = true;
             BrowserStatusText.Text = "御城プロジェクトRE を読み込みました。";
+            if (zoomAdjusted)
+            {
+                SaveSettings();
+                MessageBox.Show(this, $"保存されていた表示倍率を、最も近い選択肢の {zoomPercentage}% に変更しました。",
+                    "表示倍率", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -175,22 +198,33 @@ public partial class MainWindow : Window
         SaveSettings();
     }
 
-    private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    private void ZoomComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (ZoomValueText is null || ZoomSlider is null)
-        {
-            return;
-        }
-
-        ZoomValueText.Text = $"{ZoomSlider.Value:P0}";
         if (!_settingsLoaded)
         {
             return;
         }
 
-        _settings.ZoomFactor = ZoomSlider.Value;
-        Browser.ZoomFactor = ZoomSlider.Value;
+        if (ZoomComboBox.SelectedItem is not int zoomPercentage || !ZoomPercentages.Contains(zoomPercentage))
+        {
+            MessageBox.Show(this, "一覧から表示倍率を選択してください。", "表示倍率",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _settings.ZoomFactor = zoomPercentage / 100.0;
+        ApplyZoom();
         SaveSettings();
+    }
+
+    private void ApplyZoom()
+    {
+        WindowState = WindowState.Normal;
+        Browser.ZoomFactor = _settings.ZoomFactor;
+        Browser.Width = GameWidth * _settings.ZoomFactor;
+        Browser.Height = 720 * _settings.ZoomFactor;
+        Width = Browser.Width + _windowChromeWidth;
+        Height = Browser.Height + _windowChromeHeight;
     }
 
     private void MutedCheckBox_Changed(object sender, RoutedEventArgs e)
