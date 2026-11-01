@@ -8,7 +8,7 @@ namespace ShiroProViewer;
 
 public partial class MainWindow : Window
 {
-    private const double GameWidth = 1280;
+    private const double GameWidth = 1275;
     private const string GamePageUrl = "https://play.games.dmm.com/game/oshirore";
     private const string IsolateGameFrameScript = """
         (() => {
@@ -50,7 +50,7 @@ public partial class MainWindow : Window
                 target.style.setProperty('position', 'fixed', 'important');
                 target.style.setProperty('top', '0', 'important');
                 target.style.setProperty('left', '0', 'important');
-                target.style.setProperty('width', '1280px', 'important');
+                target.style.setProperty('width', '1275px', 'important');
                 target.style.setProperty('height', isTopLevel ? '720px' : 'auto', 'important');
                 target.style.setProperty('border', '0', 'important');
                 if (!isTopLevel) {
