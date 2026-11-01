@@ -198,6 +198,31 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ReloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_settingsLoaded || Browser.CoreWebView2 is null)
+        {
+            MessageBox.Show(this, "ブラウザーの起動が完了してから再読み込みしてください。", "再読み込み",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            Browser.CoreWebView2.Reload();
+        }
+        catch (COMException ex)
+        {
+            MessageBox.Show(this, $"再読み込みできませんでした。\n\n{ex.Message}", "再読み込みエラー",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(this, $"再読み込みできませんでした。\n\n{ex.Message}", "再読み込みエラー",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void SelectScreenshotDirectory_Click(object sender, RoutedEventArgs e)
     {
         if (!_settingsLoaded)

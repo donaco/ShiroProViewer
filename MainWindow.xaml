@@ -16,7 +16,8 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <ToolBar Grid.Row="0">
-                        <Button Content="スクリーンショット" Click="ScreenshotButton_Click" />
+                        <Button Content="スクショを撮る" Click="ScreenshotButton_Click" />
+                        <Button Content="再読み込み" Click="ReloadButton_Click" />
                         <Separator />
                         <TextBlock x:Name="BrowserStatusText" VerticalAlignment="Center" />
                     </ToolBar>
