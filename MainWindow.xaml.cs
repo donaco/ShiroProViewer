@@ -8,17 +8,33 @@ namespace ShiroProViewer;
 
 public partial class MainWindow : Window
 {
-    private const double GameWidth = 1275;
+    private const double GameWidth = 1280;
     private const string GamePageUrl = "https://play.games.dmm.com/game/oshirore";
     private const string IsolateGameFrameScript = """
         (() => {
-            if (window.top !== window) return;
+            const hideScrollbars = () => {
+                const style = document.createElement('style');
+                style.id = 'shiropro-hide-scrollbars';
+                style.textContent = `
+                    * { scrollbar-width: none !important; scrollbar-gutter: auto !important; }
+                    ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+                `;
+                (document.head || document.documentElement).appendChild(style);
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', hideScrollbars, { once: true });
+            } else {
+                hideScrollbars();
+            }
 
-            const isolateGameFrame = () => {
-                const frame = document.querySelector('iframe#game_frame');
-                if (!frame) return false;
+            const isTopLevel = window.top === window;
+            const isolateTarget = () => {
+                const target = isTopLevel
+                    ? document.querySelector('iframe#game_frame')
+                    : document.querySelector('canvas#canvas.emscripten');
+                if (!target) return false;
 
-                let element = frame;
+                let element = target;
                 while (element && element !== document.body) {
                     const parent = element.parentElement;
                     if (!parent) break;
@@ -31,19 +47,22 @@ public partial class MainWindow : Window
 
                 document.documentElement.style.cssText = 'margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important';
                 document.body.style.cssText = 'margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important';
-                frame.style.setProperty('position', 'fixed', 'important');
-                frame.style.setProperty('top', '0', 'important');
-                frame.style.setProperty('left', '0', 'important');
-                frame.style.setProperty('width', '1275px', 'important');
-                frame.style.setProperty('height', '100vh', 'important');
-                frame.style.setProperty('border', '0', 'important');
+                target.style.setProperty('position', 'fixed', 'important');
+                target.style.setProperty('top', '0', 'important');
+                target.style.setProperty('left', '0', 'important');
+                target.style.setProperty('width', '1280px', 'important');
+                target.style.setProperty('height', isTopLevel ? '720px' : 'auto', 'important');
+                target.style.setProperty('border', '0', 'important');
+                if (!isTopLevel) {
+                    target.style.setProperty('aspect-ratio', '16 / 9', 'important');
+                }
                 return true;
             };
 
             const observer = new MutationObserver(() => {
-                if (isolateGameFrame()) observer.disconnect();
+                if (isolateTarget()) observer.disconnect();
             });
-            if (!isolateGameFrame()) observer.observe(document, { childList: true, subtree: true });
+            if (!isolateTarget()) observer.observe(document, { childList: true, subtree: true });
         })();
         """;
     private readonly string _dataDirectory = Path.Combine(AppContext.BaseDirectory, "Data");
