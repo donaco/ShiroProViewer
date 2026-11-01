@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="icon.png" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
   </ItemGroup>
 

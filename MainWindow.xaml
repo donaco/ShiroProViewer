@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="立花山城さんが好き過ぎる！"
+        Icon="/icon.png"
         Width="1297"
         Height="814"
         WindowStartupLocation="CenterScreen"
@@ -16,10 +17,11 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <ToolBar Grid.Row="0">
-                        <Button Content="スクショを撮る" Click="ScreenshotButton_Click" />
-                        <Button Content="再読み込み" Click="ReloadButton_Click" />
+                        <Button Content="スクショ撮影" Click="ScreenshotButton_Click"/>
                         <Separator />
-                        <TextBlock x:Name="BrowserStatusText" VerticalAlignment="Center" />
+                        <Button Content="再読込み" Click="ReloadButton_Click"/>
+                        <Separator />
+                        <TextBlock x:Name="BrowserStatusText" VerticalAlignment="Center" Margin="16,0,0,0"/>
                     </ToolBar>
                     <wv2:WebView2 x:Name="Browser" Grid.Row="1" />
                 </Grid>
@@ -28,14 +30,14 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="24" MaxWidth="520" HorizontalAlignment="Left">
                     <TextBlock Text="表示・操作" FontSize="20" FontWeight="Bold" Margin="0,0,0,16" />
-                    <CheckBox x:Name="DarkModeCheckBox" Content="ダークモードを使用する"
-                              Checked="DarkModeCheckBox_Changed" Unchecked="DarkModeCheckBox_Changed"
-                              Margin="0,0,0,4" />
-                    <CheckBox x:Name="MutedCheckBox"
+                        <CheckBox x:Name="MutedCheckBox"
                               Content="ゲームの音声をOFFにする"
                               Checked="MutedCheckBox_Changed"
                               Unchecked="MutedCheckBox_Changed"
                               Margin="0,0,0,4" />
+                    <CheckBox x:Name="DarkModeCheckBox" Content="ダークモードを使用する"
+                              Checked="DarkModeCheckBox_Changed" Unchecked="DarkModeCheckBox_Changed"
+                              Margin="0,0,0,4" />                    
                     <CheckBox x:Name="AlwaysOnTopCheckBox"
                               Content="ウィンドウを最前面に表示する"
                               Checked="AlwaysOnTopCheckBox_Changed"
