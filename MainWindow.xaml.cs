@@ -1,7 +1,10 @@
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Navigation;
 using Microsoft.Web.WebView2.Core;
 
 namespace ShiroProViewer;
@@ -80,10 +83,32 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        var version = typeof(MainWindow).Assembly.GetName().Version
+            ?? throw new InvalidOperationException("アプリのバージョン情報を取得できません。");
+        AppVersionTextBlock.Text = $"ShiroProViewer : Ver {version.ToString(3)}";
         Width = GameWidth + 16;
         ZoomComboBox.ItemsSource = ZoomPercentages;
         ZoomComboBox.SelectedItem = 100;
         ScreenshotDirectoryTextBox.Text = ScreenshotDirectory;
+    }
+
+    private void ProjectHomeHyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        e.Handled = true;
+        try
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (Win32Exception ex)
+        {
+            MessageBox.Show(this, $"プロジェクトのリンクを開けませんでした。\n\n{ex.Message}",
+                "リンクを開けません", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(this, $"プロジェクトのリンクを開けませんでした。\n\n{ex.Message}",
+                "リンクを開けません", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
